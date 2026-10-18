@@ -15,7 +15,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
     try {
       final product = await repository.getProductDetails(id);
       emit(ProductDetailsSuccess(product));
-    } catch (error) {
+    } catch (e) {
       emit(
         ProductDetailsError(
           'Failed to load product details. Please try again.',
