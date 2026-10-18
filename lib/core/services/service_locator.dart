@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/products/data/datasources/product_details_data_source.dart';
+import '../../features/products/data/repositories/product_details_repository.dart';
+import '../../features/products/presentation/cubit/product_details_cubit.dart';
 import '../../features/auth/data/datasource/loginservice.dart';
 import '../../features/auth/data/repositories/auth_repository.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -45,10 +48,22 @@ Future<void> configureDependencies() async {
 
   // DioClient owns auth-header injection, token refresh and ApiException mapping.
   getIt.registerLazySingleton<DioClient>(
-    () => DioClient(
-      dio: getIt<Dio>(),
-      tokenStorage: getIt<TokenStorage>(),
-    ),
+    () => DioClient(dio: getIt<Dio>(), tokenStorage: getIt<TokenStorage>()),
+  );
+
+  // --- Feature: Product Details --------------------------------------------
+
+  getIt.registerLazySingleton<ProductDetailsDataSource>(
+    () => ProductDetailsDataSource(dioClient: getIt<DioClient>()),
+  );
+
+  getIt.registerLazySingleton<ProductDetailsRepository>(
+    () =>
+        ProductDetailsRepository(dataSource: getIt<ProductDetailsDataSource>()),
+  );
+
+  getIt.registerFactory<ProductDetailsCubit>(
+    () => ProductDetailsCubit(repository: getIt<ProductDetailsRepository>()),
   );
 
   // --- Feature: Auth ------------------------------------------------------
