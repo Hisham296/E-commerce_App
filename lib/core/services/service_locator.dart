@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/products/presentation/cubit/favorites_cubit.dart';
 import '../../features/products/data/datasources/product_details_data_source.dart';
 import '../../features/products/data/datasources/products_data_source.dart';
 import '../../features/products/data/repositories/product_details_repository.dart';
@@ -95,4 +96,8 @@ Future<void> configureDependencies() async {
       tokenStorage: getIt<TokenStorage>(),
     ),
   );
+
+  // --- Feature: Favorites -----------------------------------------------
+
+  getIt.registerLazySingleton<FavoritesCubit>(() => FavoritesCubit());
 }

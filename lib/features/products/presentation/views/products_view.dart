@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'favorites_view.dart';
+import 'offers_view.dart';
 import '../../../../core/responsive/responsive_context.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -87,14 +89,26 @@ class _ProductsContentState extends State<_ProductsContent> {
                                 Icons.favorite_border,
                                 color: AppColors.textSecondary,
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const FavoritesView(),
+                                  ),
+                                );
+                              },
                             ),
                             IconButton(
                               icon: const Icon(
                                 Icons.notifications_none,
                                 color: AppColors.textSecondary,
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const OffersView(),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/responsive/responsive_context.dart';
+import '../../../../core/services/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../views/product_details_view.dart';
 import '../../data/models/product_model.dart';
+import '../cubit/favorites_cubit.dart';
+import '../cubit/favorites_state.dart';
+import '../views/product_details_view.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -17,6 +21,8 @@ class ProductCard extends StatelessWidget {
         ? ((product.price - product.discountPrice) / product.price * 100)
               .round()
         : 0;
+
+    final favoritesCubit = getIt<FavoritesCubit>();
 
     return Material(
       color: AppColors.background,
@@ -44,33 +50,95 @@ class ProductCard extends StatelessWidget {
                   borderRadius: AppRadius.card,
                   child: SizedBox(
                     width: double.infinity,
-                    child:
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
                         product.imageUrl.isEmpty ||
-                            product.imageUrl == 'placeholder'
-                        ? Container(
-                            color: AppColors.surface,
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_outlined,
-                                size: 50,
-                                color: AppColors.border,
-                              ),
-                            ),
-                          )
-                        : Image.network(
-                            product.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.surface,
-                              child: const Center(
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  size: 50,
-                                  color: AppColors.border,
+                                product.imageUrl == 'placeholder'
+                            ? Container(
+                                color: AppColors.surface,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.image_outlined,
+                                    size: 50,
+                                    color: AppColors.border,
+                                  ),
                                 ),
+                              )
+                            : Image.network(
+                                product.imageUrl,
+                                fit: BoxFit.cover,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) {
+                                        return child;
+                                      }
+
+                                      final totalBytes =
+                                          loadingProgress.expectedTotalBytes;
+                                      final loadedBytes =
+                                          loadingProgress.cumulativeBytesLoaded;
+
+                                      return Container(
+                                        color: AppColors.surface,
+                                        alignment: Alignment.center,
+                                        child: CircularProgressIndicator(
+                                          value: totalBytes != null
+                                              ? loadedBytes / totalBytes
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.surface,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 50,
+                                        color: AppColors.border,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
+
+                        // Favorite button
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Material(
+                            color: AppColors.background,
+                            shape: const CircleBorder(),
+                            child: BlocBuilder<FavoritesCubit, FavoritesState>(
+                              bloc: favoritesCubit,
+                              builder: (context, state) {
+                                final isFavorite = state.contains(product.id);
+
+                                return IconButton(
+                                  tooltip: isFavorite
+                                      ? 'Remove from favorites'
+                                      : 'Add to favorites',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: Icon(
+                                    isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: isFavorite
+                                        ? Colors.red
+                                        : AppColors.textSecondary,
+                                    size: 22,
+                                  ),
+                                  onPressed: () {
+                                    favoritesCubit.toggleFavorite(product);
+                                  },
+                                );
+                              },
                             ),
                           ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
