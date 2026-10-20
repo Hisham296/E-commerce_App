@@ -1,10 +1,11 @@
+import 'package:e_commerce/core/widgets/main_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 
+import 'main_navigation_view.dart';
 import '../../features/auth/presentation/views/login.dart';
 import '../../features/products/presentation/views/favorites_view.dart';
 import '../../features/products/presentation/views/offers_view.dart';
 import '../../features/products/presentation/views/product_details_view.dart';
-import '../../features/products/presentation/views/products_view.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -14,6 +15,7 @@ class AppRoutes {
   static const String productDetails = '/product-details';
   static const String favorites = '/favorites';
   static const String offers = '/offers';
+  static const String explore = '/explore';
 
   static Route<dynamic> onGenerateRoute(
     RouteSettings settings, {
@@ -22,19 +24,19 @@ class AppRoutes {
     switch (settings.name) {
       case '/':
         return MaterialPageRoute<void>(
-          builder: (_) => isLoggedIn ? const ProductsView() : const LoginView(),
-          settings: settings,
-        );
-
-      case login:
-        return MaterialPageRoute<void>(
           builder: (_) => const LoginView(),
           settings: settings,
         );
 
       case products:
         return MaterialPageRoute<void>(
-          builder: (_) => const ProductsView(),
+          builder: (_) => const MainNavigationView(),
+          settings: settings,
+        );
+
+      case login:
+        return MaterialPageRoute<void>(
+          builder: (_) => const LoginView(),
           settings: settings,
         );
 
@@ -47,6 +49,14 @@ class AppRoutes {
       case offers:
         return MaterialPageRoute<void>(
           builder: (_) => const OffersView(),
+          settings: settings,
+        );
+
+      case explore:
+        return MaterialPageRoute<void>(
+          builder: (_) => isLoggedIn
+              ? const MainNavigationView(initialTab: MainTab.explore)
+              : const LoginView(),
           settings: settings,
         );
 
