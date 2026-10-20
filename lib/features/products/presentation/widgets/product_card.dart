@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/navigation/app_routes.dart';
 import '../../../../core/responsive/responsive_context.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,7 +9,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/product_model.dart';
 import '../cubit/favorites_cubit.dart';
 import '../cubit/favorites_state.dart';
-import '../views/product_details_view.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -30,10 +30,10 @@ class ProductCard extends StatelessWidget {
       child: InkWell(
         borderRadius: AppRadius.card,
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => ProductDetailsView(productId: product.id),
-            ),
+          Navigator.pushNamed(
+            context,
+            AppRoutes.productDetails,
+            arguments: product.id,
           );
         },
         child: Container(

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'favorites_view.dart';
-import 'offers_view.dart';
+import '../../../../core/navigation/app_routes.dart';
 import '../../../../core/responsive/responsive_context.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -90,10 +89,9 @@ class _ProductsContentState extends State<_ProductsContent> {
                                 color: AppColors.textSecondary,
                               ),
                               onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const FavoritesView(),
-                                  ),
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.favorites,
                                 );
                               },
                             ),
@@ -103,11 +101,7 @@ class _ProductsContentState extends State<_ProductsContent> {
                                 color: AppColors.textSecondary,
                               ),
                               onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const OffersView(),
-                                  ),
-                                );
+                                Navigator.pushNamed(context, AppRoutes.offers);
                               },
                             ),
                           ],
