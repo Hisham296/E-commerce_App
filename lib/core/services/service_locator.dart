@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/products/data/datasources/product_review_cache_data_source.dart';
 import '../../features/products/presentation/cubit/favorites_cubit.dart';
 import '../../features/products/data/datasources/product_details_data_source.dart';
 import '../../features/products/data/datasources/products_data_source.dart';
@@ -71,13 +72,21 @@ Future<void> configureDependencies() async {
 
   // --- Feature: Product Details ------------------------------------------
 
+  getIt.registerLazySingleton<ProductReviewCacheDataSource>(
+    () => ProductReviewCacheDataSource(
+      sharedPreferences: getIt<SharedPreferences>(),
+    ),
+  );
+
   getIt.registerLazySingleton<ProductDetailsDataSource>(
     () => ProductDetailsDataSource(dioClient: getIt<DioClient>()),
   );
 
   getIt.registerLazySingleton<ProductDetailsRepository>(
-    () =>
-        ProductDetailsRepository(dataSource: getIt<ProductDetailsDataSource>()),
+    () => ProductDetailsRepository(
+      dataSource: getIt<ProductDetailsDataSource>(),
+      reviewCacheDataSource: getIt<ProductReviewCacheDataSource>(),
+    ),
   );
 
   getIt.registerFactory<ProductDetailsCubit>(
