@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/responsive/responsive_context.dart';
+import '../../data/models/product_review_model.dart';
 import '../cubit/product_details_cubit.dart';
 import '../cubit/product_details_state.dart';
 
@@ -77,6 +78,8 @@ class _ProductDetailsContent extends StatelessWidget {
           if (state is ProductDetailsSuccess) {
             final product = state.product;
             final hasDiscount = product.discountPercentage > 0;
+
+            final allReviews = [...product.reviews, ...state.cachedReviews];
 
             return SingleChildScrollView(
               padding: EdgeInsets.all(context.spacing.md),
@@ -190,7 +193,47 @@ class _ProductDetailsContent extends StatelessWidget {
                         : product.availabilityStatus,
                   ),
                   _InfoRow(label: 'Stock', value: product.stock.toString()),
+
                   const SizedBox(height: 28),
+
+                  // Reviews section: API reviews and locally cached reviews.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Reviews (${allReviews.length})',
+                          style: context.textStyles.heading4,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _showReviewDialog(context),
+                        icon: const Icon(Icons.rate_review_outlined, size: 18),
+                        label: const Text('Write a Review'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (allReviews.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'No reviews yet. Be the first to review this product!',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  else
+                    ...allReviews.map((review) => _ReviewCard(review: review)),
+
+                  const SizedBox(height: 28),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -221,6 +264,225 @@ class _ProductDetailsContent extends StatelessWidget {
 
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+}
+
+Future<void> _showReviewDialog(BuildContext context) async {
+  final result = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (_) => const _WriteReviewDialog(),
+  );
+
+  if (result == null || !context.mounted) return;
+
+  try {
+    await context.read<ProductDetailsCubit>().addReview(
+      reviewerName: result['name'] as String,
+      comment: result['comment'] as String,
+      rating: result['rating'] as int,
+    );
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Your review has been saved successfully.')),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Could not save review: $error')));
+  }
+}
+
+class _WriteReviewDialog extends StatefulWidget {
+  const _WriteReviewDialog();
+
+  @override
+  State<_WriteReviewDialog> createState() => _WriteReviewDialogState();
+}
+
+class _WriteReviewDialogState extends State<_WriteReviewDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _commentController = TextEditingController();
+
+  int _rating = 5;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Write a Review'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Your rating'),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  final star = index + 1;
+
+                  return IconButton(
+                    tooltip: '$star star${star == 1 ? '' : 's'}',
+                    onPressed: () {
+                      setState(() => _rating = star);
+                    },
+                    icon: Icon(
+                      star <= _rating ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 30,
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Your name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your name.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _commentController,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  labelText: 'Your review',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please write a review.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+
+            Navigator.pop<Map<String, dynamic>>(context, {
+              'name': _nameController.text.trim(),
+              'comment': _commentController.text.trim(),
+              'rating': _rating,
+            });
+          },
+          child: const Text('Submit Review'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ProductReview review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final parsedDate = DateTime.tryParse(review.date);
+    final dateText = parsedDate == null
+        ? ''
+        : '${parsedDate.day.toString().padLeft(2, '0')}/'
+              '${parsedDate.month.toString().padLeft(2, '0')}/'
+              '${parsedDate.year}';
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                child: Text(
+                  review.reviewerName.isNotEmpty
+                      ? review.reviewerName[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(color: AppColors.primary),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review.reviewerName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if (dateText.isNotEmpty)
+                      Text(
+                        dateText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(
+              5,
+              (index) => Icon(
+                index < review.rating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            review.comment,
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          ),
+        ],
       ),
     );
   }
