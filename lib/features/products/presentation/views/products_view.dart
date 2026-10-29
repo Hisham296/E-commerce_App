@@ -101,7 +101,13 @@ class _ProductsContentState extends State<_ProductsContent> {
                                 color: AppColors.textSecondary,
                               ),
                               onPressed: () {
-                                Navigator.pushNamed(context, AppRoutes.offers);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'The notifications page is still under development.',
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                           ],
